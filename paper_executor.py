@@ -62,16 +62,17 @@ def evaluate_ticks_for_paper_exits(symbol, ltp):
     exit_triggered = False
     reason = ""
     
+    # Optimized exit thresholds
     if side == 1:
-        if ltp >= entry * 1.02:
-            exit_triggered, reason = True, "Take Profit 2%"
-        elif ltp <= entry * 0.99:
-            exit_triggered, reason = True, "Stop Loss 1%"
+        if ltp >= entry * 1.025:
+            exit_triggered, reason = True, "Take Profit 2.5%"
+        elif ltp <= entry * 0.991:
+            exit_triggered, reason = True, "Stop Loss 0.9%"
     elif side == -1:
-        if ltp <= entry * 0.98:
-            exit_triggered, reason = True, "Take Profit 2%"
-        elif ltp >= entry * 1.01:
-            exit_triggered, reason = True, "Stop Loss 1%"
+        if ltp <= entry * 0.975:
+            exit_triggered, reason = True, "Take Profit 2.5%"
+        elif ltp >= entry * 1.009:
+            exit_triggered, reason = True, "Stop Loss 0.9%"
             
     if exit_triggered:
         close_paper_trade(symbol, ltp, reason)

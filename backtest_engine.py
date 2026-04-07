@@ -29,20 +29,20 @@ def run_backtest(df, ticker, initial_capital=25000, risk_per_trade=0.01):
             exit_reason = ""
             current_price = row['Close']
             
-            # Simple Profit Target / Stop Loss (Risk 1%, Reward 2%)
+            # Optimized Profit Target / Stop Loss (2.5% profit / 0.9% stop loss)
             if position_type == 1:
-                if current_price >= entry_price * 1.02:
-                    exit_signal, exit_reason = True, "Take Profit 2%"
-                elif current_price <= entry_price * 0.99:
-                    exit_signal, exit_reason = True, "Stop Loss 1%"
-                elif row['kernel_bearish_change'] or row['startShortTrade'] or bars_held >= 12:
+                if current_price >= entry_price * 1.025:
+                    exit_signal, exit_reason = True, "Take Profit 2.5%"
+                elif current_price <= entry_price * 0.991:
+                    exit_signal, exit_reason = True, "Stop Loss 0.9%"
+                elif row['kernel_bearish_change'] or row['startShortTrade'] or bars_held >= 15:
                     exit_signal, exit_reason = True, "Dynamic/Time limit"
             elif position_type == -1:
-                if current_price <= entry_price * 0.98:
-                    exit_signal, exit_reason = True, "Take Profit 2%"
-                elif current_price >= entry_price * 1.01:
-                    exit_signal, exit_reason = True, "Stop Loss 1%"
-                elif row['kernel_bullish_change'] or row['startLongTrade'] or bars_held >= 12:
+                if current_price <= entry_price * 0.975:
+                    exit_signal, exit_reason = True, "Take Profit 2.5%"
+                elif current_price >= entry_price * 1.009:
+                    exit_signal, exit_reason = True, "Stop Loss 0.9%"
+                elif row['kernel_bullish_change'] or row['startLongTrade'] or bars_held >= 15:
                     exit_signal, exit_reason = True, "Dynamic/Time limit"
                     
             if exit_signal:
