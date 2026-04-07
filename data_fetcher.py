@@ -2,6 +2,9 @@ import yfinance as yf
 import pandas as pd
 import os
 import time
+
+# Data source configuration
+DATA_SOURCE = os.environ.get('DATA_SOURCE', 'yfinance')  # Options: 'yfinance', 'fyers'
 # Truncated list for simplicity, but covers major ones.
 # Accurate Nifty 100 (Nifty 50 + Next 50) Source Components
 NIFTY_100 = [
@@ -27,7 +30,45 @@ NIFTY_100 = [
     "UNITDSPR.NS", "VBL.NS", "VEDL.NS", "WIPRO.NS", "ZYDUSLIFE.NS"
 ]
 
-def fetch_5m_data(tickers=NIFTY_100, period="60d", cache_dir="data"):
+def fetch_5m_data(tickers=NIFTY_100, period="60d", cache_dir="data", source=None):
+    """
+    Fetch 5-minute historical data using the configured data source
+
+    Parameters:
+    -----------
+    tickers : list - Stock tickers in .NS format
+    period : str - Period for yfinance (e.g., "60d") or days for Fyers
+    cache_dir : str - Cache directory
+    source : str - Override data source ('yfinance' or 'fyers'). If None, uses DATA_SOURCE env var
+
+    Returns:
+    --------
+    dict - Dictionary mapping ticker to DataFrame
+    """
+    data_source = source or DATA_SOURCE
+
+    if data_source.lower() == 'fyers':
+        print(f"Using Fyers API for data fetching...")
+        try:
+            from fyers_data_fetcher import fetch_5m_data_fyers
+            # Convert period like "60d" to integer days
+            days = int(period.replace('d', '')) if 'd' in period else 30
+            return fetch_5m_data_fyers(tickers, days=days, cache_dir=cache_dir + "_fyers")
+        except ImportError:
+            print("Warning: fyers_data_fetcher not available, falling back to yfinance")
+            data_source = 'yfinance'
+        except Exception as e:
+            print(f"Error using Fyers API: {e}")
+            print("Falling back to yfinance...")
+            data_source = 'yfinance'
+
+    # Default to yfinance (original implementation)
+    print(f"Using yfinance for data fetching...")
+    return fetch_5m_data_yfinance(tickers, period, cache_dir)
+
+
+def fetch_5m_data_yfinance(tickers=NIFTY_100, period="60d", cache_dir="data"):
+    """Original yfinance implementation"""
     if not os.path.exists(cache_dir):
         os.makedirs(cache_dir)
         
