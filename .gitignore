@@ -1,0 +1,9 @@
+__pycache__/
+*.pyc
+*.log
+access_token.txt
+backtest_reports/
+data/
+data_parquet/
+data_fyers/
+*.token

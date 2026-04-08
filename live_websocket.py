@@ -5,6 +5,7 @@ from fyers_apiv3 import fyersModel
 from fyers_apiv3.FyersWebsocket import data_ws
 from fyers_auth import get_fyers_client, CLIENT_ID
 from live_executor import evaluate_and_trade
+from lorentzian_backtester import LiveWinrateTracker, MIN_TRADES_FOR_GATE, WINRATE_THRESHOLD
 from paper_executor import set_initial_paper_fund, enter_paper_trade, evaluate_ticks_for_paper_exits, end_of_day_summary
 from data_fetcher import fetch_5m_data, NIFTY_100
 from strategy import calculate_strategy_signals
@@ -17,6 +18,7 @@ IS_PAPER_TRADING = False
 EOD_PRINTED = False
 tick_count = 0
 message_count = 0
+winrate_trackers = {}
 
 def initialize_historical_data():
     """Fetches trailing data so our ML model has history to compute on instantly."""
@@ -111,20 +113,38 @@ def on_message(message):
         else:
             last_row = evaluated_df.iloc[-1]
             raw_ticker = symbol.replace("NSE:", "").replace("-EQ", "")
-            
-            # 2. Trigger Executor if signal matches
-            if last_row['startLongTrade']:
-                print(f"  [SIGNAL] 🟢 LONG {raw_ticker} @ ₹{last_row['Close']:.2f}")
-                if IS_PAPER_TRADING:
-                    enter_paper_trade(raw_ticker, 1, last_row['Close'])
+            # Update and gate by live winrate (matches backtester logic)
+            tracker = winrate_trackers.setdefault(
+                symbol, LiveWinrateTracker(min_trades=MIN_TRADES_FOR_GATE)
+            )
+            bar_idx_loc = evaluated_df.index.get_loc(evaluated_df.index[-1])
+            bar_idx = bar_idx_loc.start if isinstance(bar_idx_loc, slice) else bar_idx_loc
+            tracker.update(bar_idx, float(last_row['Close']))
+
+            direction = 1 if last_row['startLongTrade'] else -1 if last_row['startShortTrade'] else 0
+            if direction != 0:
+                tracker.log_entry(bar_idx, float(last_row['Close']), direction)
+                winrate = tracker.winrate()
+
+                if winrate < WINRATE_THRESHOLD:
+                    print(
+                        f"  [GATE] Skipping {raw_ticker}: live winrate "
+                        f"{winrate*100:.1f}% < {WINRATE_THRESHOLD*100:.0f}% "
+                        f"(min {MIN_TRADES_FOR_GATE} trades)"
+                    )
                 else:
-                    evaluate_and_trade(raw_ticker, 1, last_row['Close'])
-            elif last_row['startShortTrade']:
-                print(f"  [SIGNAL] 🔴 SHORT {raw_ticker} @ ₹{last_row['Close']:.2f}")
-                if IS_PAPER_TRADING:
-                    enter_paper_trade(raw_ticker, -1, last_row['Close'])
-                else:
-                    evaluate_and_trade(raw_ticker, -1, last_row['Close'])
+                    if direction == 1:
+                        print(f"  [SIGNAL] 🟢 LONG {raw_ticker} @ ₹{last_row['Close']:.2f} (WR {winrate*100:.1f}%)")
+                        if IS_PAPER_TRADING:
+                            enter_paper_trade(raw_ticker, 1, last_row['Close'])
+                        else:
+                            evaluate_and_trade(raw_ticker, 1, last_row['Close'])
+                    else:
+                        print(f"  [SIGNAL] 🔴 SHORT {raw_ticker} @ ₹{last_row['Close']:.2f} (WR {winrate*100:.1f}%)")
+                        if IS_PAPER_TRADING:
+                            enter_paper_trade(raw_ticker, -1, last_row['Close'])
+                        else:
+                            evaluate_and_trade(raw_ticker, -1, last_row['Close'])
             
         # 3. Create a new empty candle for the current timestamp
         new_row = pd.DataFrame([{
