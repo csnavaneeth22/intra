@@ -63,7 +63,8 @@ NIFTY_50 = [
     "M&M",       "MARUTI",     "NESTLEIND",  "NTPC",       "ONGC",
     "POWERGRID", "RELIANCE",   "SBILIFE",    "SBIN",       "SHRIRAMFIN",
     "SUNPHARMA", "TATACONSUM", "TATAMOTORS", "TATASTEEL",  "TCS",
-    "TECHM",     "TITAN",      "ULTRACEMCO", "WIPRO",      "ETERNAL",
+    "TECHM",     "TITAN",      "ULTRACEMCO", "WIPRO",
+    "ETERNAL",   # Formerly Zomato Ltd., renamed to Eternal Ltd. (NSE: ETERNAL) in 2025
 ]
 
 NIFTY_50_SECTORS: Dict[str, str] = {
@@ -91,7 +92,7 @@ NIFTY_50_SECTORS: Dict[str, str] = {
     "TATAMOTORS": "Auto",           "TATASTEEL":   "Metals",
     "TCS":        "IT",             "TECHM":       "IT",
     "TITAN":      "Consumer",       "ULTRACEMCO":  "Cement",
-    "WIPRO":      "IT",             "ETERNAL":     "Consumer",
+    "WIPRO":      "IT",             "ETERNAL":     "Consumer",    # Formerly Zomato Ltd. (renamed 2025)
 }
 
 # ========================================================================================
