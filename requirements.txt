@@ -3,3 +3,5 @@ numpy
 yfinance
 scipy
 fyers-apiv3
+pyarrow
+matplotlib
