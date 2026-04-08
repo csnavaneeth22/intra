@@ -43,7 +43,7 @@ MAX_TRADES_PER_DAY  = 20          # across all 50 stocks
 MAX_SECTOR_TRADES   = 3           # max simultaneous positions per sector
 ATR_PERIOD          = 14
 ATR_SL_MULT         = 1.5         # Stop-loss: ATR(14) * 1.5
-ATR_TP_MULT         = 1.5 * 1.5  # Take-profit: ATR(14) * 2.25  (1.5 R:R)
+ATR_TP_MULT         = 1.5 * 2.0  # Take-profit: ATR(14) * 3.0   (1:2 R:R)
 FORCE_CLOSE_HOUR    = 15
 FORCE_CLOSE_MIN     = 20          # 15:20 IST
 BACKTEST_DAYS       = 30
@@ -556,9 +556,10 @@ class LiveWinrateTracker:
 
     def winrate(self) -> float:
         total = self.wins + self.losses
-        if total == 0:
-            return 1.0 if self.min_trades == 0 else 0.0
-        return (self.wins / total) if total >= self.min_trades else 0.0
+        if total < self.min_trades:
+            # Gate not yet active (insufficient history) → allow trading
+            return 1.0
+        return self.wins / total
 
 
 # ========================================================================================
